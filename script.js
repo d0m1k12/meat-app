@@ -58,21 +58,23 @@ function addOrder() {
     const phone = document.getElementById('clientPhone').value.trim();
     const type = document.getElementById('orderMeatType').value;
     const weight = parseFloat(document.getElementById('orderWeight').value);
-    const margin = parseFloat(document.getElementById('margin').value);
+    
+    // 1. Замість margin беремо ціну продажу з нового поля
+    const salePricePerKg = parseFloat(document.getElementById('salePrice').value);
 
-    if (!name || !weight || !phone) return alert("Введіть ім'я, телефон та вагу!");
+    // Додаємо перевірку, чи введена ціна
+    if (!name || !weight || !phone || !salePricePerKg) return alert("Заповніть усі поля, включаючи ціну!");
     if (inventory[type].weight < weight) return alert(`Недостатньо м'яса "${type}" на складі!`);
     if (inventory[type].price === 0) return alert(`Вкажіть ціну закупівлі для "${type}" на складі!`);
 
-    // Зберігаємо або оновлюємо клієнта в базі
     clientsDB[name] = phone;
 
     const buyPrice = inventory[type].price;
-    const salePricePerKg = buyPrice + (buyPrice * (margin / 100));
+    
+    // 2. Нові формули (тепер без відсотків)
     const totalPrice = salePricePerKg * weight;
     const profit = (salePricePerKg - buyPrice) * weight;
 
-    // Віднімаємо зі складу
     inventory[type].weight -= weight;
 
     const newOrder = {
@@ -81,16 +83,18 @@ function addOrder() {
         phone,
         type,
         weight,
-        margin,
+        salePricePerKg, // 3. Зберігаємо ціну продажу замість націнки
         totalPrice: totalPrice.toFixed(2),
         profit: profit.toFixed(2)
     };
 
     orders.push(newOrder);
     
+    // Очищення полів
     document.getElementById('clientName').value = '';
     document.getElementById('clientPhone').value = '';
     document.getElementById('orderWeight').value = '';
+    document.getElementById('salePrice').value = ''; // 4. Очищаємо нове поле ціни
     
     saveAndRender();
 }
@@ -118,10 +122,13 @@ function editWeight(id) {
         inventory[order.type].weight -= weightDifference;
         order.weight = newWeight;
 
+        // --- ОСЬ ЦІ ТРИ РЯДКИ ЗМІНИЛИСЯ ---
         const buyPrice = inventory[order.type].price;
-        const salePricePerKg = buyPrice + (buyPrice * (order.margin / 100));
+        const salePricePerKg = order.salePricePerKg; // Беремо збережену ціну
+        
         order.totalPrice = (salePricePerKg * order.weight).toFixed(2);
         order.profit = ((salePricePerKg - buyPrice) * order.weight).toFixed(2);
+        // ----------------------------------
 
         saveAndRender();
     }
@@ -156,7 +163,7 @@ function renderAll() {
             <div class="order-item">
                 <div class="order-info">
                     <strong>${order.name}</strong> — ${order.type} (${order.weight}кг)<br>
-                    <span style="color: #555;">Сума: <strong>${order.totalPrice} грн</strong></span>
+                    <span style="color: #555;">Ціна: ${order.salePricePerKg} грн/кг | Сума: <strong>${order.totalPrice} грн</strong></span>
                 </div>
                 <div class="order-actions">
                     <button onclick="editWeight(${order.id})" class="btn-sm btn-edit">✎ Вага</button>
