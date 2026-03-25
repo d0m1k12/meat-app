@@ -5,33 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>М'ясна Лавка: Управління</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <div class="app-container">
         <header>
-            <h1>Управління замовленнями</h1>
+            <h1>Панель управління</h1>
         </header>
 
-        <section class="card">
-            <h2>📦 Склад (Залишок)</h2>
-            <div class="input-group">
-                <input type="number" id="stockWeight" placeholder="Всього м'яса (кг)">
-                <input type="number" id="buyPrice" placeholder="Ціна закупівлі (грн/кг)">
+        <section class="card card-stock">
+            <div class="card-header">
+                <h2>📦 Склад (Надходження)</h2>
             </div>
-            <p>Залишилось: <span id="remainingStock">0</span> кг</p>
+            <div class="input-group">
+                <select id="stockMeatType" class="input-field">
+                    <option value="Хрящ">Хрящ</option>
+                    <option value="Фарш">Фарш</option>
+                    <option value="Ошийок">Ошийок</option>
+                    <option value="Ребра">Ребра</option>
+                </select>
+                <input type="number" id="stockAddWeight" class="input-field" placeholder="Додати вагу (кг)">
+                <input type="number" id="buyPrice" class="input-field" placeholder="Ціна закупівлі (грн/кг)">
+            </div>
+            <button onclick="updateStock()" class="btn btn-stock">Оновити склад</button>
+            <div id="stockDisplay" class="stock-display">
+                </div>
         </section>
 
-        <section class="card">
-            <h2>👤 Нове замовлення</h2>
-            <input type="text" id="clientName" placeholder="Ім'я клієнта">
-            <input type="number" id="orderWeight" placeholder="Вага замовлення (кг)">
-            <input type="number" id="margin" placeholder="Націнка (%)" value="20">
-            <button onclick="addOrder()" class="btn-main">Додати замовлення</button>
+        <section class="card card-order">
+            <div class="card-header">
+                <h2>👤 Нове замовлення</h2>
+            </div>
+            <input type="text" id="clientName" class="input-field" placeholder="Ім'я клієнта">
+            
+            <select id="orderMeatType" class="input-field">
+                <option value="Хрящ">Хрящ</option>
+                <option value="Фарш">Фарш</option>
+                <option value="Ошийок">Ошийок</option>
+                <option value="Ребра">Ребра</option>
+            </select>
+
+            <input type="number" id="orderWeight" class="input-field" placeholder="Вага замовлення (кг)">
+            <input type="number" id="margin" class="input-field" placeholder="Націнка (%)" value="20">
+            <button onclick="addOrder()" class="btn btn-order">Додати замовлення</button>
         </section>
 
-        <section class="card">
-            <h2>📋 Поточні замовлення</h2>
+        <section class="card card-history">
+            <div class="card-header">
+                <h2>📋 Поточні замовлення</h2>
+            </div>
             <div id="ordersList"></div>
             <div class="summary">
                 <p>Загальна вигода: <strong id="totalProfit">0</strong> грн</p>
