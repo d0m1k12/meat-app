@@ -1,4 +1,4 @@
-// База даних складу та замовлень
+// Бази даних
 let inventory = JSON.parse(localStorage.getItem('meatInventory')) || {
     "Хрящ": { weight: 0, price: 0 },
     "Фарш": { weight: 0, price: 0 },
@@ -6,8 +6,9 @@ let inventory = JSON.parse(localStorage.getItem('meatInventory')) || {
     "Ребра": { weight: 0, price: 0 }
 };
 let orders = JSON.parse(localStorage.getItem('meatOrders')) || [];
+let clientsDB = JSON.parse(localStorage.getItem('meatClientsDB')) || {}; // База імен та телефонів
 
-// 1. Оновлення складу
+// --- РОБОТА ЗІ СКЛАДОМ ---
 function updateStock() {
     const type = document.getElementById('stockMeatType').value;
     const addWeight = parseFloat(document.getElementById('stockAddWeight').value) || 0;
@@ -22,16 +23,49 @@ function updateStock() {
     saveAndRender();
 }
 
-// 2. Створення замовлення
-function addOrder() {
+function clearStock() {
+    if(confirm("Увага! Ви впевнені, що хочете обнулити весь склад та ціни?")) {
+        inventory = {
+            "Хрящ": { weight: 0, price: 0 },
+            "Фарш": { weight: 0, price: 0 },
+            "Ошийок": { weight: 0, price: 0 },
+            "Ребра": { weight: 0, price: 0 }
+        };
+        saveAndRender();
+    }
+}
+
+// --- РОБОТА З КЛІЄНТАМИ ---
+function autoFillPhone() {
     const name = document.getElementById('clientName').value;
+    // Якщо ім'я є в базі, автоматично підставляємо телефон
+    if (clientsDB[name]) {
+        document.getElementById('clientPhone').value = clientsDB[name];
+    }
+}
+
+function updateClientsList() {
+    const datalist = document.getElementById('savedClients');
+    datalist.innerHTML = '';
+    for (let name in clientsDB) {
+        datalist.innerHTML += `<option value="${name}">`;
+    }
+}
+
+// --- ЗАМОВЛЕННЯ ---
+function addOrder() {
+    const name = document.getElementById('clientName').value.trim();
+    const phone = document.getElementById('clientPhone').value.trim();
     const type = document.getElementById('orderMeatType').value;
     const weight = parseFloat(document.getElementById('orderWeight').value);
     const margin = parseFloat(document.getElementById('margin').value);
 
-    if (!name || !weight) return alert("Введіть ім'я та вагу!");
+    if (!name || !weight || !phone) return alert("Введіть ім'я, телефон та вагу!");
     if (inventory[type].weight < weight) return alert(`Недостатньо м'яса "${type}" на складі!`);
     if (inventory[type].price === 0) return alert(`Вкажіть ціну закупівлі для "${type}" на складі!`);
+
+    // Зберігаємо або оновлюємо клієнта в базі
+    clientsDB[name] = phone;
 
     const buyPrice = inventory[type].price;
     const salePricePerKg = buyPrice + (buyPrice * (margin / 100));
@@ -44,6 +78,7 @@ function addOrder() {
     const newOrder = {
         id: Date.now(),
         name,
+        phone,
         type,
         weight,
         margin,
@@ -54,24 +89,21 @@ function addOrder() {
     orders.push(newOrder);
     
     document.getElementById('clientName').value = '';
+    document.getElementById('clientPhone').value = '';
     document.getElementById('orderWeight').value = '';
     
     saveAndRender();
 }
 
-// 3. Видалення замовлення
 function deleteOrder(id) {
     if(confirm("Точно видалити це замовлення?")) {
         let order = orders.find(o => o.id === id);
-        // Повертаємо м'ясо на склад
         inventory[order.type].weight += order.weight;
-        // Видаляємо з масиву
         orders = orders.filter(o => o.id !== id);
         saveAndRender();
     }
 }
 
-// 4. Зміна ваги замовлення
 function editWeight(id) {
     let order = orders.find(o => o.id === id);
     let newWeight = parseFloat(prompt(`Введіть нову вагу для ${order.name} (${order.type}):`, order.weight));
@@ -79,16 +111,13 @@ function editWeight(id) {
     if (newWeight && newWeight > 0 && newWeight !== order.weight) {
         let weightDifference = newWeight - order.weight;
         
-        // Перевіряємо чи вистачить на складі, якщо вага збільшується
         if (weightDifference > 0 && inventory[order.type].weight < weightDifference) {
             return alert("Недостатньо м'яса на складі для збільшення ваги!");
         }
 
-        // Оновлюємо склад
         inventory[order.type].weight -= weightDifference;
         order.weight = newWeight;
 
-        // Перераховуємо гроші
         const buyPrice = inventory[order.type].price;
         const salePricePerKg = buyPrice + (buyPrice * (order.margin / 100));
         order.totalPrice = (salePricePerKg * order.weight).toFixed(2);
@@ -98,19 +127,17 @@ function editWeight(id) {
     }
 }
 
-function sendToMessenger(name, type, weight, price) {
-    const text = `Вітаю, ${name}! Ваше замовлення: ${type} (${weight}кг). До сплати: ${price}грн.`;
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
-}
-
+// --- ЗБЕРЕЖЕННЯ ТА ВІДОБРАЖЕННЯ ---
 function saveAndRender() {
     localStorage.setItem('meatInventory', JSON.stringify(inventory));
     localStorage.setItem('meatOrders', JSON.stringify(orders));
+    localStorage.setItem('meatClientsDB', JSON.stringify(clientsDB));
     renderAll();
 }
 
 function renderAll() {
+    updateClientsList(); // Оновлюємо випадаючий список імен
+
     // Рендер складу
     const stockDiv = document.getElementById('stockDisplay');
     stockDiv.innerHTML = '<strong>Залишки:</strong><br>';
@@ -133,8 +160,8 @@ function renderAll() {
                 </div>
                 <div class="order-actions">
                     <button onclick="editWeight(${order.id})" class="btn-sm btn-edit">✎ Вага</button>
-                    <button onclick="deleteOrder(${order.id})" class="btn-sm btn-delete">✖ Видалити</button>
-                    <button onclick="sendToMessenger('${order.name}', '${order.type}', ${order.weight}, ${order.totalPrice})" class="btn-sm btn-msg">Надіслати</button>
+                    <button onclick="deleteOrder(${order.id})" class="btn-sm btn-delete">✖ Видал.</button>
+                    <button onclick="window.location.href='tel:${order.phone}'" class="btn-sm btn-msg">📞 Дзвінок</button>
                 </div>
             </div>
         `;

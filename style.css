@@ -126,3 +126,17 @@ header h1 {
     text-align: right;
     margin-top: 15px;
 }
+
+.btn-clear-stock {
+    background-color: transparent;
+    color: var(--danger-color);
+    border: 2px solid var(--danger-color);
+    margin-top: 10px;
+    height: 45px;
+    font-size: 16px;
+}
+
+.btn-clear-stock:active {
+    background-color: var(--danger-color);
+    color: white;
+}

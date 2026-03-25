@@ -27,6 +27,8 @@
                 <input type="number" id="buyPrice" class="input-field" placeholder="Ціна закупівлі (грн/кг)">
             </div>
             <button onclick="updateStock()" class="btn btn-stock">Оновити склад</button>
+            <button onclick="clearStock()" class="btn btn-clear-stock">🗑 Очистити склад</button>
+            
             <div id="stockDisplay" class="stock-display">
                 </div>
         </section>
@@ -35,7 +37,9 @@
             <div class="card-header">
                 <h2>👤 Нове замовлення</h2>
             </div>
-            <input type="text" id="clientName" class="input-field" placeholder="Ім'я клієнта">
+            
+            <input type="text" id="clientName" class="input-field" placeholder="Ім'я клієнта" list="savedClients" oninput="autoFillPhone()">
+            <datalist id="savedClients"></datalist> <input type="tel" id="clientPhone" class="input-field" placeholder="Номер телефону">
             
             <select id="orderMeatType" class="input-field">
                 <option value="Хрящ">Хрящ</option>
